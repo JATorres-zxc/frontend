@@ -1,9 +1,8 @@
 import Vue from 'vue';
 import Router from 'vue-router';
-import IndexView from './components/IndexView.vue'; // Your components
-import DetailsView from './components/DetailView.vue'; // Your components
-import ResultsView from './components/ResultsView.vue'; // Your components
-
+import IndexView from './pages/IndexView.vue'; 
+import DetailsView from './pages/DetailView.vue'; 
+import ResultsView from './pages/ResultsView.vue'; 
 
 Vue.use(Router);
 
@@ -16,13 +15,13 @@ export default new Router({
       component: IndexView,
     },
     {
-      path: '/details/',
+      path: '/details/:id',
       name: 'DetailsView',
       component: DetailsView,
 
     },
     {
-      path: '/results',
+      path: '/:id/results',
       name: 'ResultsView',
       component: ResultsView,
     },

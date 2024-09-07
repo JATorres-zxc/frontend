@@ -17,6 +17,8 @@
         </a>
       </div>
     </div>
+    <br>
+    <br>
   </div>
 </template>
 
@@ -24,13 +26,12 @@
 export default {
   data() {
     return {
-      questions: [], // Array to hold the questions from the API
+      questions: [], 
     };
   },
   methods: {
     fetchQuestions() {
-      // Make an API call to fetch the questions
-      fetch('http://127.0.0.1:8000/polls/') // Replace with your API endpoint
+      fetch('http://127.0.0.1:8000/polls/') 
         .then((response) => response.json())
         .then((data) => {
           this.questions = data;
@@ -40,13 +41,11 @@ export default {
         });
     },
     formatDate(dateString) {
-      // Format the publication date
       const options = { year: 'numeric', month: 'long', day: 'numeric' };
       return new Date(dateString).toLocaleDateString(undefined, options);
     },
   },
   created() {
-    // Fetch questions when the component is created
     this.fetchQuestions();
   },
 };
