@@ -2,6 +2,8 @@
   <div class="details-view">
     <h1 class="title">DETAILS VIEW</h1>
     <h2 class="question">{{ question.question_text }}</h2>
+
+    <!-- Voting Form -->
     <form @submit.prevent="submitVote">
       <div v-for="(choice, index) in question.choices" :key="index" class="choice-container">
         <input 
@@ -10,10 +12,26 @@
           v-model="selectedChoice" 
           :id="'choice-' + index" 
         />
-        <label :for="'choice-' + index">{{ choice.choice_text }}</label>
+        <label :for="'choice-' + index">{{ choice.choice_text }} </label>
+        <!-- Edit and Delete buttons beside each choice -->
+        <button @click.prevent="editChoice(choice.id)" class="edit-button">Edit</button>
+        <button @click.prevent="deleteChoice(choice.id)" class="delete-button">Delete</button>
       </div>
       <button type="submit" class="vote-button">VOTE</button>
     </form>
+
+    <!-- Add Choice Form -->
+    <h3>Add a New Choice</h3>
+    <form @submit.prevent="addChoice">
+      <input
+        v-model="newChoiceText"
+        type="text"
+        placeholder="Enter new choice text"
+        required
+      />
+      <button type="submit">Add Choice</button>
+    </form>
+
     <br>
     <button @click="goBackToIndex" class="vote-button">Go back to question list</button>
     <br>
@@ -27,6 +45,7 @@ export default {
     return {
       question: {},  
       selectedChoice: null,  
+      newChoiceText: '',  // New choice input
     };
   },
   methods: {
@@ -36,10 +55,8 @@ export default {
         const cookies = document.cookie.split(';');
         for (let i = 0; i < cookies.length; i++) {
           const cookie = cookies[i].trim();
-          if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          if (cookie.substring(0, name.length + 1) === (name + '='))
             cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-            break;
-          }
         }
       }
       return cookieValue;
@@ -61,11 +78,6 @@ export default {
       const questionId = this.$route.params.id;
       const csrfToken = this.getCookie('csrftoken');
 
-      console.log('CSRF Token:', csrfToken);
-      console.log({
-        choice: this.selectedChoice
-      });
-
       if (this.selectedChoice) {
         fetch(`http://127.0.0.1:8000/polls/${questionId}/vote/`, {
           method: 'POST',
@@ -77,12 +89,7 @@ export default {
             choice: this.selectedChoice  
           }),
         })
-        .then(response => {
-          if (!response.ok) {
-            throw new Error('HTTP error ' + response.status);
-          }
-          return response.json();
-        })
+        .then(response => response.json())
         .then(data => {
           if (data.error) {
             alert(data.error);  
@@ -99,6 +106,82 @@ export default {
       }
     },
 
+    addChoice() {
+      const questionId = this.$route.params.id;
+      const csrfToken = this.getCookie('csrftoken');
+
+      fetch(`http://127.0.0.1:8000/polls/${questionId}/add_choice/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken,  
+        },
+        body: JSON.stringify({
+          choice_text: this.newChoiceText
+        }),
+      })
+      .then(response => response.json())
+      .then(data => {
+        this.question.choices.push(data);  // Add new choice locally
+        this.newChoiceText = '';  // Clear input field
+      })
+      .catch(error => {
+        console.error('Error adding choice:', error);
+      });
+    },
+
+    editChoice(choiceId) {
+      const newChoiceText = prompt("Enter the new text for this choice:");
+      if (newChoiceText) {
+        const csrfToken = this.getCookie('csrftoken');
+
+        fetch(`http://127.0.0.1:8000/polls/choice/${choiceId}/edit/`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken,  
+          },
+          body: JSON.stringify({
+            choice_text: newChoiceText
+          }),
+        })
+        .then(response => response.json())
+        .then(data => {
+          const choice = this.question.choices.find(c => c.id === choiceId);
+          if (choice) {
+            choice.choice_text = data.choice_text;  // Update choice text in UI
+          }
+        })
+        .catch(error => {
+          console.error('Error editing choice:', error);
+        });
+      }
+    },
+
+    deleteChoice(choiceId) {
+      if (confirm("Are you sure you want to delete this choice?")) {
+        const csrfToken = this.getCookie('csrftoken');
+
+        fetch(`http://127.0.0.1:8000/polls/choice/${choiceId}/delete/`, {
+          method: 'DELETE',
+          headers: {
+            'X-CSRFToken': csrfToken,  
+          },
+        })
+        .then(response => {
+          if (response.ok) {
+            this.question.choices = this.question.choices.filter(c => c.id !== choiceId);
+            alert('Choice deleted successfully!');
+          } else {
+            alert('Error deleting choice.');
+          }
+        })
+        .catch(error => {
+          console.error('Error deleting choice:', error);
+        });
+      }
+    },
+
     goBackToIndex() {
       this.$router.push({ name: 'IndexView' });
     },
@@ -111,6 +194,9 @@ export default {
   }
 };
 </script>
+
+
+
   
   <style scoped>
   .details-view {
