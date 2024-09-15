@@ -41,6 +41,7 @@
 
 <script>
 export default {
+  props: ['id'],
   data() {
     return {
       question: {},  
@@ -64,10 +65,10 @@ export default {
 
     fetchQuestion() {
       const questionId = this.$route.params.id;
-      fetch(`http://127.0.0.1:8000/polls/${questionId}/`)
+      fetch(`http://127.0.0.1:8000/api-sileo/question/question/get/${questionId}/`)
         .then(response => response.json())
         .then(data => {
-          this.question = data;
+          this.question = data.data;
         })
         .catch(error => {
           console.error('Error fetching question:', error);
@@ -79,14 +80,14 @@ export default {
       const csrfToken = this.getCookie('csrftoken');
 
       if (this.selectedChoice) {
-        fetch(`http://127.0.0.1:8000/polls/${questionId}/vote/`, {
+        fetch(`http://127.0.0.1:8000/api-sileo/vote/vote/create/`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'X-CSRFToken': csrfToken,  
           },
           body: JSON.stringify({
-            choice: this.selectedChoice  
+            choice_id: this.selectedChoice  
           }),
         })
         .then(response => response.json())
@@ -110,19 +111,21 @@ export default {
       const questionId = this.$route.params.id;
       const csrfToken = this.getCookie('csrftoken');
 
-      fetch(`http://127.0.0.1:8000/polls/${questionId}/add_choice/`, {
+      fetch(`http://127.0.0.1:8000/api-sileo/choice/choice/create/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-CSRFToken': csrfToken,  
         },
         body: JSON.stringify({
-          choice_text: this.newChoiceText
+          choice_text: this.newChoiceText,
+          question_id: questionId  // Pass the question ID along with the choice text
         }),
       })
       .then(response => response.json())
       .then(data => {
-        this.question.choices.push(data);  // Add new choice locally
+        this.question.choices.push(data);
+        this.fetchQuestion();  // Add new choice locally
         this.newChoiceText = '';  // Clear input field
       })
       .catch(error => {
@@ -135,13 +138,14 @@ export default {
       if (newChoiceText) {
         const csrfToken = this.getCookie('csrftoken');
 
-        fetch(`http://127.0.0.1:8000/polls/choice/${choiceId}/edit/`, {
-          method: 'PUT',
+        fetch(`http://127.0.0.1:8000/api-sileo/choice/choice/update/`, {
+          method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'X-CSRFToken': csrfToken,  
           },
           body: JSON.stringify({
+            pk: choiceId,  // Pass the choiceId as 'pk'
             choice_text: newChoiceText
           }),
         })
@@ -149,7 +153,7 @@ export default {
         .then(data => {
           const choice = this.question.choices.find(c => c.id === choiceId);
           if (choice) {
-            choice.choice_text = data.choice_text;  // Update choice text in UI
+            choice.choice_text = data.data.choice_text;  // Update choice text in UI
           }
         })
         .catch(error => {
@@ -162,11 +166,15 @@ export default {
       if (confirm("Are you sure you want to delete this choice?")) {
         const csrfToken = this.getCookie('csrftoken');
 
-        fetch(`http://127.0.0.1:8000/polls/choice/${choiceId}/delete/`, {
-          method: 'DELETE',
+        fetch(`http://127.0.0.1:8000/api-sileo/choice/choice/delete/`, {
+          method: 'POST',
           headers: {
+            'Content-Type': 'application/json',
             'X-CSRFToken': csrfToken,  
           },
+          body: JSON.stringify({
+            pk: choiceId,  // Pass the choiceId as 'pk'
+          }),
         })
         .then(response => {
           if (response.ok) {

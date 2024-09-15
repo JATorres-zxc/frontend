@@ -25,14 +25,14 @@ export default {
   },
   methods: {
     fetchResults() {
-      const questionId = this.$route.params.id; 
-      fetch(`http://127.0.0.1:8000/polls/${questionId}/results/`)
+      const questionId = this.$route.params.id;
+      fetch(`http://127.0.0.1:8000/api-sileo/question/question/get/${questionId}/`)
         .then(response => response.json())
         .then(data => {
-          this.question = data;  
+          this.question = data.data;
         })
         .catch(error => {
-          console.error('Error fetching results:', error);
+          console.error('Error fetching question:', error);
         });
     },
     goToVote() {

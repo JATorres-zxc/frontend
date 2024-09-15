@@ -15,7 +15,7 @@ export default new Router({
       component: IndexView,
     },
     {
-      path: '/details/:id',
+      path: '/question/question/get/:id',
       name: 'DetailsView',
       component: DetailsView,
 

@@ -10,7 +10,7 @@
         <span class="question-title">{{ question.question_text }}</span>
         <span class="pub-date">{{ formatDate(question.pub_date) }}</span>
         <a 
-          :href="`/details/${question.id}`" 
+          :href="`/question/question/get/${question.id}`" 
           class="link"
         >
           GO TO THIS QUESTION
@@ -59,10 +59,10 @@ export default {
   },
   methods: {
     fetchQuestions() {
-      fetch('http://127.0.0.1:8000/polls/') 
+      fetch('http://127.0.0.1:8000/api-sileo/question/question/filter/') 
         .then((response) => response.json())
         .then((data) => {
-          this.questions = data;
+          this.questions = data.data;
         })
         .catch((error) => {
           console.error('Error fetching questions:', error);
@@ -73,7 +73,7 @@ export default {
       return new Date(dateString).toLocaleDateString(undefined, options);
     },
     createQuestion() {
-      fetch('http://127.0.0.1:8000/polls/create/', {
+      fetch('http://127.0.0.1:8000/api-sileo/question/question/create/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -82,22 +82,23 @@ export default {
       })
       .then((response) => response.json())
       .then((data) => {
-        this.questions.push(data);  
+        this.questions.push(data.data);  
         this.newQuestion.question_text = '';  
       })
       .catch((error) => {
         console.error('Error creating question:', error);
       });
     },
-    editQuestion(questionId) {
+    editQuestion(question_id) {
       const newQuestionText = prompt("Enter the new question text:");
       if (newQuestionText) {
-        fetch(`http://127.0.0.1:8000/polls/${questionId}/edit/`, {
-          method: 'PUT',
+        fetch(`http://127.0.0.1:8000/api-sileo/question/question/update/`, {
+          method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
+            pk: question_id,  // Include the question ID
             question_text: newQuestionText
           })
         })
@@ -111,10 +112,16 @@ export default {
         });
       }
     },
-    deleteQuestion(questionId) {
+    deleteQuestion(question_id) {
       if (confirm("Are you sure you want to delete this question?")) {
-        fetch(`http://127.0.0.1:8000/polls/${questionId}/delete/`, {
-          method: 'DELETE',
+        fetch(`http://127.0.0.1:8000/api-sileo/question/question/delete/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            pk: question_id, 
+          })
         })
         .then(() => {
           alert('Question deleted successfully!');
